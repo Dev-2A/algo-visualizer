@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+/* 클래스 기반 다크 모드 (.dark 토글) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── 디자인 토큰: 파스텔 블루 + 다크 모드 ─────────────────────── */
+:root {
+  /* 표면 */
+  --background: #eef4fb;
+  --surface: #ffffff;
+  --surface-muted: #e2edf8;
+  --border: #d3e2f1;
+
+  /* 텍스트 */
+  --foreground: #1b2a41;
+  --muted-foreground: #5b6b82;
+
+  /* 브랜드 (파스텔 블루) */
+  --primary: #4f93dd;
+  --primary-hover: #3f82cc;
+  --primary-soft: #c7def6;
+  --on-primary: #ffffff;
+
+  /* 시각화 상태 색 */
+  --viz-default: #8fbdec; /* 기본 막대 */
+  --viz-compare: #e8b65b; /* 비교 중 */
+  --viz-swap: #e88b8b; /* 스왑 중 */
+  --viz-pivot: #b89be0; /* 피벗 */
+  --viz-sorted: #7fcf9f; /* 정렬 완료 */
+}
+
+.dark {
+  --background: #0e1726;
+  --surface: #16223a;
+  --surface-muted: #1d2c48;
+  --border: #2a3c5c;
+
+  --foreground: #e6eefb;
+  --muted-foreground: #93a4c0;
+
+  --primary: #6aa8ec;
+  --primary-hover: #7fb6f0;
+  --primary-soft: #25405f;
+  --on-primary: #0e1726;
+
+  --viz-default: #5b8fd0;
+  --viz-compare: #e0b35f;
+  --viz-swap: #e08585;
+  --viz-pivot: #a98fd6;
+  --viz-sorted: #6cc18f;
+}
+
+/* CSS 변수를 Tailwind 유틸리티로 노출 (inline → .dark 오버라이드 그대로 반영) */
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-viz-default: var(--viz-default);
+  --color-viz-compare: var(--viz-compare);
+  --color-viz-swap: var(--viz-swap);
+  --color-viz-pivot: var(--viz-pivot);
+  --color-viz-sorted: var(--viz-sorted);
+
+  --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
