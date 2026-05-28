@@ -1,17 +1,43 @@
-import { Moon, Sun, Activity } from "lucide-react";
+import { useEffect, type ReactNode } from "react";
+import {
+  Moon,
+  Sun,
+  Activity,
+  SkipBack,
+  SkipForward,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
-
-const vizSwatches = [
-  { label: "기본", className: "bg-viz-default" },
-  { label: "비교", className: "bg-viz-compare" },
-  { label: "스왑", className: "bg-viz-swap" },
-  { label: "피벗", className: "bg-viz-pivot" },
-  { label: "정렬됨", className: "bg-viz-sorted" },
-];
+import {
+  usePlayerStore,
+  selectCurrentStep,
+  selectTotalSteps,
+  selectIsFinished,
+} from "@/core/player/playerStore";
+import demoModule from "@/core/player/_demoModule";
 
 export default function App() {
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
+
+  const load = usePlayerStore((s) => s.load);
+  const currentIndex = usePlayerStore((s) => s.currentIndex);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const stepForward = usePlayerStore((s) => s.stepForward);
+  const stepBackward = usePlayerStore((s) => s.stepBackward);
+  const reset = usePlayerStore((s) => s.reset);
+  const seek = usePlayerStore((s) => s.seek);
+  const togglePlay = usePlayerStore((s) => s.togglePlay);
+
+  const step = usePlayerStore(selectCurrentStep);
+  const total = usePlayerStore(selectTotalSteps);
+  const finished = usePlayerStore(selectIsFinished);
+
+  // 임시: 데모 모듈 로드 (Step 4에서 실제 정렬 모듈로 교체)
+  useEffect(() => {
+    load(demoModule);
+  }, [load]);
 
   return (
     <div className="min-h-full">
@@ -29,7 +55,6 @@ export default function App() {
             </p>
           </div>
         </div>
-
         <button
           onClick={toggleTheme}
           aria-label="테마 전환"
@@ -39,41 +64,101 @@ export default function App() {
         </button>
       </header>
 
-      <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
-        <section className="flex flex-col gap-3">
+      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-14">
+        <div className="flex flex-col gap-2">
           <span className="w-fit rounded-full bg-primary-soft px-3 py-1 font-mono text-xs font-medium text-primary">
-            Step 1 · 스캐폴딩 완료
+            Step 2 · 플레이어 코어 점검
           </span>
-          <h2 className="text-3xl font-bold tracking-tight">
-            파스텔 블루 토큰 &amp; 다크 모드 점검
-          </h2>
-          <p className="max-w-prose text-muted-foreground">
-            우측 상단 버튼으로 테마를 전환하면 토큰이 즉시 반영됩니다. 아래는
-            정렬 시각화에 쓸 상태 색상 팔레트입니다.
+          <p className="text-sm text-muted-foreground">
+            도메인 무지 플레이어 스토어를 직접 조작하는 임시 점검 패널입니다.
+            자동 재생은 애니메이션 루프가 들어오는 Step 3부터 동작합니다.
           </p>
-        </section>
+        </div>
 
-        <section className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-          {vizSwatches.map((s) => (
-            <div
-              key={s.label}
-              className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-4"
+        {/* 상태 표시 */}
+        <section className="rounded-2xl border border-border bg-surface p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="font-mono text-sm text-muted-foreground">
+              step {currentIndex} / {Math.max(total - 1, 0)}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${
+                finished
+                  ? "bg-viz-sorted/20 text-foreground"
+                  : "bg-primary-soft text-primary"
+              }`}
             >
-              <span className={`h-12 w-full rounded-lg ${s.className}`} />
-              <span className="font-mono text-xs text-muted-foreground">
-                {s.label}
-              </span>
-            </div>
-          ))}
+              {finished ? "finished" : isPlaying ? "playing" : "paused"}
+            </span>
+          </div>
+
+          {/* 진행 막대 */}
+          <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-200"
+              style={{
+                width:
+                  total > 1 ? `${(currentIndex / (total - 1)) * 100}%` : "0%",
+              }}
+            />
+          </div>
+
+          <pre className="overflow-x-auto rounded-xl bg-surface-muted p-4 font-mono text-sm text-foreground">
+            {JSON.stringify(
+              {
+                note: step?.note,
+                pseudoLine: step?.pseudoLine,
+                counters: step?.counters,
+                state: step?.state,
+              },
+              null,
+              2,
+            )}
+          </pre>
         </section>
 
-        <section className="rounded-2xl border border-border bg-surface p-5 font-mono text-sm">
-          <p className="text-muted-foreground"># 현재 테마</p>
-          <p className="mt-1 text-foreground">
-            theme = <span className="text-primary">"{theme}"</span>
-          </p>
+        {/* 트랜스포트 */}
+        <section className="flex items-center justify-center gap-2">
+          <CtrlButton label="처음" onClick={reset}>
+            <SkipBack size={18} />
+          </CtrlButton>
+          <CtrlButton label="이전" onClick={stepBackward}>
+            <ChevronLeft size={18} />
+          </CtrlButton>
+          <button
+            onClick={togglePlay}
+            className="rounded-xl bg-primary px-5 py-2.5 font-medium text-on-primary transition hover:bg-primary-hover"
+          >
+            {isPlaying ? "일시정지" : "재생"}
+          </button>
+          <CtrlButton label="다음" onClick={stepForward}>
+            <ChevronRight size={18} />
+          </CtrlButton>
+          <CtrlButton label="끝" onClick={() => seek(total - 1)}>
+            <SkipForward size={18} />
+          </CtrlButton>
         </section>
       </main>
     </div>
+  );
+}
+
+function CtrlButton({
+  children,
+  label,
+  onClick,
+}: {
+  children: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-foreground transition hover:bg-surface-muted"
+    >
+      {children}
+    </button>
   );
 }
