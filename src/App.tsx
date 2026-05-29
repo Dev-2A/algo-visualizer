@@ -1,15 +1,5 @@
-import { useEffect, type ReactNode } from "react";
-import {
-  Moon,
-  Sun,
-  Activity,
-  SkipBack,
-  SkipForward,
-  ChevronLeft,
-  ChevronRight,
-  Play,
-  Pause,
-} from "lucide-react";
+import { useEffect } from "react";
+import { Moon, Sun, Activity } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import {
   usePlayerStore,
@@ -18,6 +8,8 @@ import {
   selectIsFinished,
 } from "@/core/player/playerStore";
 import CanvasStage from "@/core/canvas/CanvasStage";
+import ControlBar from "@/components/ControlBar";
+import { useKeyboardShortcuts } from "@/components/useKeyboardShortcuts";
 import { bubbleSort } from "@/modules/sorting";
 
 export default function App() {
@@ -27,25 +19,19 @@ export default function App() {
   const load = usePlayerStore((s) => s.load);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
-  const speed = usePlayerStore((s) => s.speed);
-  const setSpeed = usePlayerStore((s) => s.setSpeed);
-  const stepForward = usePlayerStore((s) => s.stepForward);
-  const stepBackward = usePlayerStore((s) => s.stepBackward);
-  const reset = usePlayerStore((s) => s.reset);
-  const seek = usePlayerStore((s) => s.seek);
-  const togglePlay = usePlayerStore((s) => s.togglePlay);
 
   const step = usePlayerStore(selectCurrentStep);
   const total = usePlayerStore(selectTotalSteps);
   const finished = usePlayerStore(selectIsFinished);
-  const lastIdx = Math.max(total - 1, 0);
 
   useEffect(() => {
     load(bubbleSort);
   }, [load]);
+  useKeyboardShortcuts();
 
   const comparisons = step?.counters.comparisons ?? 0;
   const swaps = step?.counters.swaps ?? 0;
+  const lastIdx = Math.max(total - 1, 0);
 
   return (
     <div className="min-h-full">
@@ -72,18 +58,33 @@ export default function App() {
         </button>
       </header>
 
-      <main className="mx-auto flex max-w-2xl flex-col gap-5 px-6 py-12">
+      <main className="mx-auto flex max-w-3xl flex-col gap-5 px-6 py-10">
         <div className="flex flex-col gap-2">
           <span className="w-fit rounded-full bg-primary-soft px-3 py-1 font-mono text-xs font-medium text-primary">
-            Step 4 · 버블 정렬 (수직 슬라이스)
+            Step 5 · 컨트롤 바 + 키보드 단축키
           </span>
           <p className="text-sm text-muted-foreground">
-            첫 진짜 알고리즘. 비교는 노란색, 스왑은 빨강(트윈으로 자리 바꿈),
-            정렬 완료된 막대는 초록으로 표시됩니다.
+            <kbd className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[11px]">
+              Space
+            </kbd>{" "}
+            재생/일시정지 ·{" "}
+            <kbd className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[11px]">
+              ←
+            </kbd>{" "}
+            <kbd className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[11px]">
+              →
+            </kbd>{" "}
+            스텝 ·{" "}
+            <kbd className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[11px]">
+              Home
+            </kbd>{" "}
+            <kbd className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[11px]">
+              End
+            </kbd>{" "}
+            처음/끝
           </p>
         </div>
 
-        {/* 캔버스 */}
         <div className="overflow-hidden rounded-2xl border border-border bg-surface">
           <CanvasStage className="h-72 w-full" />
         </div>
@@ -110,76 +111,8 @@ export default function App() {
           </span>
         </div>
 
-        {/* 타임라인 */}
-        <input
-          type="range"
-          min={0}
-          max={lastIdx}
-          value={currentIndex}
-          onChange={(e) => seek(Number(e.target.value))}
-          className="w-full accent-[var(--primary)]"
-        />
-
-        {/* 트랜스포트 */}
-        <section className="flex items-center justify-center gap-2">
-          <CtrlButton label="처음" onClick={reset}>
-            <SkipBack size={18} />
-          </CtrlButton>
-          <CtrlButton label="이전" onClick={stepBackward}>
-            <ChevronLeft size={18} />
-          </CtrlButton>
-          <button
-            onClick={togglePlay}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 font-medium text-on-primary transition hover:bg-primary-hover"
-          >
-            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            {isPlaying ? "일시정지" : "재생"}
-          </button>
-          <CtrlButton label="다음" onClick={stepForward}>
-            <ChevronRight size={18} />
-          </CtrlButton>
-          <CtrlButton label="끝" onClick={() => seek(lastIdx)}>
-            <SkipForward size={18} />
-          </CtrlButton>
-        </section>
-
-        {/* 속도 (임시 — Step 5에서 컨트롤 바로 정식화) */}
-        <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
-          <span>속도</span>
-          <input
-            type="range"
-            min={1}
-            max={30}
-            step={1}
-            value={speed}
-            onChange={(e) => setSpeed(Number(e.target.value))}
-            className="flex-1 accent-[var(--primary)]"
-          />
-          <span className="w-20 text-right text-foreground">
-            {speed} step/s
-          </span>
-        </div>
+        <ControlBar />
       </main>
     </div>
-  );
-}
-
-function CtrlButton({
-  children,
-  label,
-  onClick,
-}: {
-  children: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface text-foreground transition hover:bg-surface-muted"
-    >
-      {children}
-    </button>
   );
 }
