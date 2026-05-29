@@ -7,6 +7,8 @@ import {
   SkipForward,
   ChevronLeft,
   ChevronRight,
+  Play,
+  Pause,
 } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import {
@@ -15,6 +17,7 @@ import {
   selectTotalSteps,
   selectIsFinished,
 } from "@/core/player/playerStore";
+import CanvasStage from "@/core/canvas/CanvasStage";
 import demoModule from "@/core/player/_demoModule";
 
 export default function App() {
@@ -24,6 +27,8 @@ export default function App() {
   const load = usePlayerStore((s) => s.load);
   const currentIndex = usePlayerStore((s) => s.currentIndex);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const speed = usePlayerStore((s) => s.speed);
+  const setSpeed = usePlayerStore((s) => s.setSpeed);
   const stepForward = usePlayerStore((s) => s.stepForward);
   const stepBackward = usePlayerStore((s) => s.stepBackward);
   const reset = usePlayerStore((s) => s.reset);
@@ -33,8 +38,8 @@ export default function App() {
   const step = usePlayerStore(selectCurrentStep);
   const total = usePlayerStore(selectTotalSteps);
   const finished = usePlayerStore(selectIsFinished);
+  const lastIdx = Math.max(total - 1, 0);
 
-  // 임시: 데모 모듈 로드 (Step 4에서 실제 정렬 모듈로 교체)
   useEffect(() => {
     load(demoModule);
   }, [load]);
@@ -64,58 +69,45 @@ export default function App() {
         </button>
       </header>
 
-      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-6 py-14">
+      <main className="mx-auto flex max-w-2xl flex-col gap-5 px-6 py-12">
         <div className="flex flex-col gap-2">
           <span className="w-fit rounded-full bg-primary-soft px-3 py-1 font-mono text-xs font-medium text-primary">
-            Step 2 · 플레이어 코어 점검
+            Step 3 · 캔버스 게임 루프 점검
           </span>
           <p className="text-sm text-muted-foreground">
-            도메인 무지 플레이어 스토어를 직접 조작하는 임시 점검 패널입니다.
-            자동 재생은 애니메이션 루프가 들어오는 Step 3부터 동작합니다.
+            재생하면 rAF 루프가 속도에 맞춰 자동 진행하고 스텝 사이를
+            보간(트윈)합니다. 끝에 닿으면 자동 정지하고, 테마를 바꾸면 캔버스
+            색도 따라옵니다.
           </p>
         </div>
 
-        {/* 상태 표시 */}
-        <section className="rounded-2xl border border-border bg-surface p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <span className="font-mono text-sm text-muted-foreground">
-              step {currentIndex} / {Math.max(total - 1, 0)}
-            </span>
-            <span
-              className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${
-                finished
-                  ? "bg-viz-sorted/20 text-foreground"
-                  : "bg-primary-soft text-primary"
-              }`}
-            >
-              {finished ? "finished" : isPlaying ? "playing" : "paused"}
-            </span>
-          </div>
+        {/* 캔버스 */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <CanvasStage className="h-64 w-full" />
+        </div>
 
-          {/* 진행 막대 */}
-          <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-[width] duration-200"
-              style={{
-                width:
-                  total > 1 ? `${(currentIndex / (total - 1)) * 100}%` : "0%",
-              }}
-            />
-          </div>
+        {/* 상태 줄 */}
+        <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
+          <span>
+            step {currentIndex} / {lastIdx}
+          </span>
+          <span>
+            {step?.note} · line {step?.pseudoLine}
+          </span>
+          <span className={finished ? "text-foreground" : "text-primary"}>
+            {finished ? "finished" : isPlaying ? "playing" : "paused"}
+          </span>
+        </div>
 
-          <pre className="overflow-x-auto rounded-xl bg-surface-muted p-4 font-mono text-sm text-foreground">
-            {JSON.stringify(
-              {
-                note: step?.note,
-                pseudoLine: step?.pseudoLine,
-                counters: step?.counters,
-                state: step?.state,
-              },
-              null,
-              2,
-            )}
-          </pre>
-        </section>
+        {/* 타임라인 (드래그 seek) */}
+        <input
+          type="range"
+          min={0}
+          max={lastIdx}
+          value={currentIndex}
+          onChange={(e) => seek(Number(e.target.value))}
+          className="w-full accent-[var(--primary)]"
+        />
 
         {/* 트랜스포트 */}
         <section className="flex items-center justify-center gap-2">
@@ -127,17 +119,35 @@ export default function App() {
           </CtrlButton>
           <button
             onClick={togglePlay}
-            className="rounded-xl bg-primary px-5 py-2.5 font-medium text-on-primary transition hover:bg-primary-hover"
+            className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 font-medium text-on-primary transition hover:bg-primary-hover"
           >
+            {isPlaying ? <Pause size={18} /> : <Play size={18} />}
             {isPlaying ? "일시정지" : "재생"}
           </button>
           <CtrlButton label="다음" onClick={stepForward}>
             <ChevronRight size={18} />
           </CtrlButton>
-          <CtrlButton label="끝" onClick={() => seek(total - 1)}>
+          <CtrlButton label="끝" onClick={() => seek(lastIdx)}>
             <SkipForward size={18} />
           </CtrlButton>
         </section>
+
+        {/* 속도 (임시 — Step 5 컨트롤 바에서 정식화) */}
+        <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
+          <span>속도</span>
+          <input
+            type="range"
+            min={1}
+            max={30}
+            step={1}
+            value={speed}
+            onChange={(e) => setSpeed(Number(e.target.value))}
+            className="flex-1 accent-[var(--primary)]"
+          />
+          <span className="w-20 text-right text-foreground">
+            {speed} step/s
+          </span>
+        </div>
       </main>
     </div>
   );

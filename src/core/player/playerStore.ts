@@ -6,16 +6,16 @@ const MIN_SPEED = 0.5;
 const MAX_SPEED = 60;
 
 export interface PlayerState {
-  module: AlgoModule | null;
+  module: AlgoModule<any, any> | null;
   input: unknown;
-  steps: AlgoStep[];
+  steps: AlgoStep<any>[];
   currentIndex: number;
   isPlaying: boolean;
   /** 초당 진행 스텝 수 (애니메이션 루프가 이 값으로 진행 속도를 결정) */
   speed: number;
 
   // ── 로딩 ─────────────────────────────
-  load: (module: AlgoModule, input?: unknown) => void;
+  load: (module: AlgoModule<any, any>, input?: unknown) => void;
   setInput: (input: unknown) => void;
 
   // ── 트랜스포트 ───────────────────────
@@ -45,7 +45,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       steps: module.generate(usedInput),
       currentIndex: 0,
       isPlaying: false,
-    });
+    })
   },
 
   setInput: (input) => {
@@ -56,7 +56,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       steps: module.generate(input),
       currentIndex: 0,
       isPlaying: false,
-    });
+    })
   },
 
   play: () => {
@@ -88,8 +88,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   stepBackward: () => {
     const { currentIndex } = get();
-    if (currentIndex > 0)
-      set({ currentIndex: currentIndex - 1, isPlaying: false });
+    if (currentIndex > 0) set({ currentIndex: currentIndex - 1, isPlaying: false });
   },
 
   seek: (index) => {
@@ -103,13 +102,13 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   setSpeed: (speed) =>
     set({ speed: Math.max(MIN_SPEED, Math.min(speed, MAX_SPEED)) }),
-}));
+}))
 
 // ── 파생 셀렉터 ─────────────────────────────
-export const selectCurrentStep = (s: PlayerState): AlgoStep | null =>
+export const selectCurrentStep = (s: PlayerState): AlgoStep<any> | null =>
   s.steps[s.currentIndex] ?? null;
 
-export const selectPrevStep = (s: PlayerState): AlgoStep | null =>
+export const selectPrevStep = (s: PlayerState): AlgoStep<any> | null =>
   s.currentIndex > 0 ? (s.steps[s.currentIndex - 1] ?? null) : null;
 
 export const selectTotalSteps = (s: PlayerState): number => s.steps.length;
