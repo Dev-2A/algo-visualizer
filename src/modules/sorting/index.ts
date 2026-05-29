@@ -1,4 +1,4 @@
-import type { AlgoModule } from "src/core/player/types";
+import type { AlgoModule, CounterDef } from "@/core/player/types";
 import type { SortingAlgorithmSpec, SortState } from "./types";
 import { drawSorting } from "./draw";
 import { bubbleSpec } from "./algorithms/bubble";
@@ -6,9 +6,9 @@ import { bubbleSpec } from "./algorithms/bubble";
 /** 기본 입력: 10개, 적당히 흐트러진 1..10 */
 const DEFAULT_INPUT = [5, 2, 8, 1, 9, 3, 7, 4, 6, 10];
 
-const SORTING_COUNTERS = [
-  { key: "comparisons", label: "비교" },
-  { key: "swaps", label: "스왑" },
+const SORTING_COUNTERS: CounterDef[] = [
+  { key: "comparisons", label: "비교", accent: "compare" },
+  { key: "swaps", label: "스왑", accent: "swap" },
 ];
 
 /** 명세 + 공유 draw + 공통 카운터를 합쳐 AlgoModule을 생산 */

@@ -10,6 +10,7 @@ import {
 import CanvasStage from "@/core/canvas/CanvasStage";
 import ControlBar from "@/components/ControlBar";
 import PseudocodePanel from "@/components/PseudocodePanel";
+import CounterPanel from "@/components/CounterPanel";
 import { useKeyboardShortcuts } from "@/components/useKeyboardShortcuts";
 import { bubbleSort } from "@/modules/sorting";
 
@@ -30,8 +31,6 @@ export default function App() {
   }, [load]);
   useKeyboardShortcuts();
 
-  const comparisons = step?.counters.comparisons ?? 0;
-  const swaps = step?.counters.swaps ?? 0;
   const lastIdx = Math.max(total - 1, 0);
 
   return (
@@ -62,39 +61,42 @@ export default function App() {
       <main className="mx-auto flex max-w-5xl flex-col gap-5 px-6 py-10">
         <div className="flex flex-col gap-2">
           <span className="w-fit rounded-full bg-primary-soft px-3 py-1 font-mono text-xs font-medium text-primary">
-            Step 6 · 의사코드 동기화
+            Step 7 · 카운터 패널 + 색상 우선순위
           </span>
           <p className="text-sm text-muted-foreground">
-            현재 스텝의 라인이 파스텔 블루로 하이라이트됩니다. 캔버스의
-            비교·스왑이 어느 코드 라인에서 발생하는지 한눈에 보여요.
+            비교·스왑 카운트가 사이드바 카드로 승격됐고, 막대 색은{" "}
+            <span className="text-viz-sorted">sorted</span> &gt;{" "}
+            <span className="text-viz-swap">swap</span> &gt;{" "}
+            <span className="text-viz-compare">compare</span> &gt;{" "}
+            <span className="text-viz-pivot">pivot</span> 순으로 우선합니다.
           </p>
         </div>
 
-        {/* 캔버스 + 의사코드 (lg 이상에서 2단) */}
+        {/* 2단: 캔버스+상태 | 사이드바(의사코드 + 카운터) */}
         <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-start">
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-            <CanvasStage className="h-72 w-full sm:h-[400px]" />
+          <div className="flex flex-col gap-3">
+            <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+              <CanvasStage className="h-72 w-full sm:h-[400px]" />
+            </div>
+            {/* 상태 줄 (카운터는 패널로 이동, step/state만) */}
+            <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
+              <span>
+                step {currentIndex} / {lastIdx}
+              </span>
+              <span className={finished ? "text-viz-sorted" : "text-primary"}>
+                {finished ? "finished" : isPlaying ? "playing" : "paused"}
+              </span>
+            </div>
+            {/* note */}
+            <div className="rounded-xl bg-surface-muted px-3 py-2 font-mono text-xs text-muted-foreground">
+              {step?.note ?? "\u00A0"}
+            </div>
           </div>
-          <PseudocodePanel />
-        </div>
 
-        {/* 상태 줄 */}
-        <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
-          <span>
-            step {currentIndex} / {lastIdx}
-          </span>
-          <span className="text-foreground">
-            비교 <span className="text-viz-compare">{comparisons}</span> · 스왑{" "}
-            <span className="text-viz-swap">{swaps}</span>
-          </span>
-          <span className={finished ? "text-viz-sorted" : "text-primary"}>
-            {finished ? "finished" : isPlaying ? "playing" : "paused"}
-          </span>
-        </div>
-
-        {/* note */}
-        <div className="rounded-xl bg-surface-muted px-3 py-2 font-mono text-xs text-muted-foreground">
-          {step?.note ?? "\u00A0"}
+          <aside className="flex flex-col gap-3">
+            <PseudocodePanel />
+            <CounterPanel />
+          </aside>
         </div>
 
         <ControlBar />

@@ -22,6 +22,8 @@ export interface AlgoStep<S = unknown> {
 export interface CounterDef {
   key: string;
   label: string;
+  /** 선택: 색상 액센트. 미지정 시 "primary"로 표시. */
+  accent?: "compare" | "swap" | "pivot" | "sorted" | "primary";
 }
 
 /** 캔버스 draw에 전달되는 해석된 색상 팔레트 (Canvas는 CSS 변수를 직접 못 읽으므로 주입) */
